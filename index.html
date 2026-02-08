@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet' />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+  
+  <style>
+    body { font-family: sans-serif; }
+    #calendar { max-width: 900px; margin: 40px auto; }
+  </style>
+</head>
+<body>
+
+  <div id='calendar'></div>
+
+  <script>
+    // 1. Configurar conexión con Supabase
+    const supabaseUrl = 'https://fskvlfmokevtgxydzbkf.supabase.co';
+    const supabaseKey = 'sb_publishable_7SN9o2jFznE1xVM07urPaQ_csamtRlc';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      var calendarEl = document.getElementById('calendar');
+
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        
+        // 2. Cargar eventos desde Supabase
+        events: async function(info, successCallback, failureCallback) {
+          let { data, error } = await supabase.from('eventos').select('*');
+          if (error) failureCallback(error);
+          else successCallback(data);
+        },
+
+        // 3. Crear evento al hacer clic
+        dateClick: async function(info) {
+          var titulo = prompt('Nuevo Evento:');
+          if (titulo) {
+            const { error } = await supabase
+              .from('eventos')
+              .insert([{ title: titulo, start: info.dateStr }]);
+            
+            if (!error) calendar.refetchEvents(); // Refresca el calendario
+          }
+        }
+      });
+
+      calendar.render();
+    });
+  </script>
+</body>
+</html>
