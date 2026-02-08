@@ -15,40 +15,46 @@
   <div id='calendar'></div>
 
   <script>
-    // 1. Configurar conexión con Supabase
-    const supabaseUrl = 'https://fskvlfmokevtgxydzbkf.supabase.co';
-    const supabaseKey = 'sb_publishable_7SN9o2jFznE1xVM07urPaQ_csamtRlc';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+// 1. Configurar conexión con Supabase
+// Cambiamos el nombre de la variable de 'supabase' a 'supabaseClient'
+const supabaseUrl = 'https://tu-url.supabase.co';
+const supabaseKey = 'tu-clave-anon';
 
-    document.addEventListener('DOMContentLoaded', async function() {
-      var calendarEl = document.getElementById('calendar');
+// Fíjate que aquí usamos la librería global (supabase) para crear nuestro cliente (supabaseClient)
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-      var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        locale: 'es',
+document.addEventListener('DOMContentLoaded', async function() {
+  var calendarEl = document.getElementById('calendar');
+
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'es',
+    
+    // 2. Aquí también cambiamos el nombre para que use 'supabaseClient'
+    events: async function(info, successCallback, failureCallback) {
+      let { data, error } = await supabaseClient.from('eventos').select('*');
+      if (error) {
+        console.error(error);
+        failureCallback(error);
+      } else {
+        successCallback(data);
+      }
+    },
+
+    dateClick: async function(info) {
+      var titulo = prompt('Nuevo Evento:');
+      if (titulo) {
+        const { error } = await supabaseClient
+          .from('eventos')
+          .insert([{ title: titulo, start: info.dateStr }]);
         
-        // 2. Cargar eventos desde Supabase
-        events: async function(info, successCallback, failureCallback) {
-          let { data, error } = await supabase.from('eventos').select('*');
-          if (error) failureCallback(error);
-          else successCallback(data);
-        },
+        if (!error) calendar.refetchEvents();
+      }
+    }
+  });
 
-        // 3. Crear evento al hacer clic
-        dateClick: async function(info) {
-          var titulo = prompt('Nuevo Evento:');
-          if (titulo) {
-            const { error } = await supabase
-              .from('eventos')
-              .insert([{ title: titulo, start: info.dateStr }]);
-            
-            if (!error) calendar.refetchEvents(); // Refresca el calendario
-          }
-        }
-      });
-
-      calendar.render();
-    });
+  calendar.render();
+});
   </script>
 </body>
 </html>
